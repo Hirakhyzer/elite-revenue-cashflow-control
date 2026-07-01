@@ -8,11 +8,12 @@ const addDays = (d, n) => { const x = new Date(`${d}T12:00:00`); x.setDate(x.get
 export function buildForecast(state) {
   const [collection, renewalFactor, changeFactor] = factors(state.scenario);
   let cash = state.openingCash;
-  return MONTHS.map((month) => {
+  return MONTHS.map((month, index) => {
     const project = state.projects.reduce((sum, item) => sum + (item.forecast[month] || 0), 0);
     const invoice = state.invoices.reduce((sum, item) => {
       const due = item.id === state.delayedInvoiceId ? addDays(item.due, Number(state.delayedDays || 0)) : item.due;
-      return sum + (monthOf(due) === month ? item.amount * collection * (invoiceRisk(item).confidence / 100) : 0);
+      const expectedThisMonth = monthOf(due) === month || (index === 0 && due < `${MONTHS[0]}-01`);
+      return sum + (expectedThisMonth ? item.amount * collection * (invoiceRisk(item).confidence / 100) : 0);
     }, 0);
     const renewal = state.renewals.filter((item) => item.month === month).reduce((sum, item) => sum + item.amount * item.probability / 100 * renewalFactor, 0);
     const change = state.changes.filter((item) => item.month === month).reduce((sum, item) => sum + item.amount * item.confidence / 100 * changeFactor, 0);
