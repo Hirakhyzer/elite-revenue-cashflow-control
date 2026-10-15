@@ -12,8 +12,9 @@ export function buildForecast(state) {
     const project = state.projects.reduce((sum, item) => sum + (item.forecast[month] || 0), 0);
     const invoice = state.invoices.reduce((sum, item) => {
       const due = item.id === state.delayedInvoiceId ? addDays(item.due, Number(state.delayedDays || 0)) : item.due;
+      const effectiveInvoice = due === item.due ? item : { ...item, due };
       const expectedThisMonth = monthOf(due) === month || (index === 0 && due < `${MONTHS[0]}-01`);
-      return sum + (expectedThisMonth ? item.amount * collection * (invoiceRisk(item).confidence / 100) : 0);
+      return sum + (expectedThisMonth ? item.amount * collection * (invoiceRisk(effectiveInvoice).confidence / 100) : 0);
     }, 0);
     const renewal = state.renewals.filter((item) => item.month === month).reduce((sum, item) => sum + item.amount * item.probability / 100 * renewalFactor, 0);
     const change = state.changes.filter((item) => item.month === month).reduce((sum, item) => sum + item.amount * item.confidence / 100 * changeFactor, 0);
